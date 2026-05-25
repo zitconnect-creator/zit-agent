@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claudio — Z-IT Connect</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    header .logo {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(14,165,233,.4);
+    }
+    header h1 { font-size: 17px; font-weight: 700; }
+    header p  { font-size: 11px; color: #aaa; margin-top: 2px; }
+    #status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #22c55e;
+      margin-left: auto;
+      box-shadow: 0 0 0 2px rgba(34,197,94,.25);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { box-shadow: 0 0 0 2px rgba(34,197,94,.25); }
+      50%      { box-shadow: 0 0 0 5px rgba(34,197,94,.1); }
+    }
+
+    /* ── Chat container ── */
+    #chat-wrap {
+      flex: 1;
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+
+    /* ── Bubbles ── */
+    .bubble-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .bubble-row.user  { flex-direction: row-reverse; }
+    .bubble-row.agent { flex-direction: row; }
+
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .bubble-row.user  .avatar { background: #0ea5e9; font-size: 15px; }
+    .bubble-row.agent .avatar {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      font-size: 13px; font-weight: 700; color: #fff;
+    }
+
+    .bubble {
+      max-width: 78%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .bubble-row.user  .bubble {
+      background: #0ea5e9;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble-row.agent .bubble {
+      background: #fff;
+      color: #222;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    /* ── Meta (score + trechos) ── */
+    .meta {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .badge.respondido     { background: #d1fae5; color: #065f46; }
+    .badge.baixa_confianca{ background: #fef3c7; color: #92400e; }
+    .badge.sem_resultado  { background: #fee2e2; color: #991b1b; }
+
+    .trechos-toggle {
+      background: none; border: none; cursor: pointer;
+      color: #6366f1; font-size: 12px; padding: 0;
+      text-decoration: underline;
+    }
+    .trechos-list {
+      display: none;
+      margin-top: 6px;
+      border-left: 3px solid #e0e0e0;
+      padding-left: 10px;
+      color: #555;
+    }
+    .trechos-list.open { display: block; }
+    .trecho-item {
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .trecho-item .trecho-meta {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 2px;
+    }
+
+    /* ── Lead card ── */
+    .lead-card {
+      margin-top: 12px;
+      background: #f8faff;
+      border: 1.5px solid #e0e7ff;
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lead-card h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #3730a3;
+      margin-bottom: 2px;
+    }
+    .lead-card input, .lead-card select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+      background: #fff;
+    }
+    .lead-card input:focus, .lead-card select:focus { border-color: #6366f1; }
+    .lead-card button {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .lead-card button:hover { opacity: .88; }
+    .lead-card button:disabled { opacity: .5; cursor: default; }
+    .lead-enviado {
+      text-align: center;
+      font-size: 14px;
+      color: #16a34a;
+      font-weight: 600;
+      padding: 8px 0 4px;
+    }
+
+    /* ── Phone capture card ── */
+    .phone-card {
+      margin-top: 10px;
+      background: #f0f7ff;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #1e40af;
+    }
+    .phone-card p { margin-bottom: 10px; line-height: 1.45; }
+    .phone-card .phone-row {
+      display: flex; gap: 8px;
+    }
+    .phone-card input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1.5px solid #93c5fd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+    }
+    .phone-card input:focus { border-color: #3b82f6; }
+    .phone-card .btn-salvar {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity .15s;
+    }
+    .phone-card .btn-salvar:hover { opacity: .88; }
+    .phone-card .btn-agora-nao {
+      background: none;
+      border: none;
+      color: #93c5fd;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 6px 0 0;
+      display: block;
+    }
+    .phone-card .btn-agora-nao:hover { color: #3b82f6; }
+    .phone-confirmado {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #15803d;
+      background: #f0fdf4;
+      border: 1.5px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+
+    /* ── Typing indicator ── */
+    .typing .bubble {
+      display: flex; gap: 5px; align-items: center;
+      padding: 14px 18px;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #bbb;
+      animation: blink 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink {
+      0%,80%,100% { opacity: .2; transform: scale(.8); }
+      40%          { opacity: 1;  transform: scale(1); }
+    }
+
+    /* ── Input bar ── */
+    #input-bar {
+      width: 100%;
+      max-width: 760px;
+      padding: 12px 16px 20px;
+      display: flex;
+      gap: 10px;
+    }
+    #input-bar textarea {
+      flex: 1;
+      border: 1.5px solid #d1d5db;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      line-height: 1.45;
+      max-height: 140px;
+      transition: border-color .2s;
+    }
+    #input-bar textarea:focus { border-color: #0ea5e9; }
+    #input-bar button {
+      width: 46px; height: 46px;
+      border: none; border-radius: 12px;
+      background: #0ea5e9;
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      align-self: flex-end;
+      transition: background .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    #input-bar button:hover  { background: #0284c7; }
+    #input-bar button:active { transform: scale(.94); }
+    #input-bar button:disabled { background: #e0e0e0; cursor: default; }
+
+    /* ── Welcome / loading ── */
+    #welcome {
+      text-align: center;
+      color: #bbb;
+      margin: auto;
+      padding: 40px 20px;
+      font-size: 13px;
+    }
+    #welcome .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #0ea5e9;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">C</div>
+  <div>
+    <h1>Claudio</h1>
+    <p>Assistente Virtual · Z-IT Connect</p>
+  </div>
+  <div id="status-dot" title="Online"></div>
+  <a href="/analytics" onclick="event.preventDefault(); window.open('/analytics','_self')" style="margin-left:12px;color:#aaa;font-size:12px;text-decoration:none;display:flex;align-items:center;gap:5px;cursor:pointer;" title="Analytics">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Analytics
+  </a>
+</header>
+
+<div id="chat-wrap">
+  <div id="messages">
+    <div id="welcome">
+      <div class="spinner"></div>
+      <p>Claudio está chegando...</p>
+    </div>
+  </div>
+
+  <div id="input-bar">
+    <textarea id="input" rows="1" placeholder="Digite sua pergunta..."></textarea>
+    <button id="send-btn" title="Enviar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  const messagesEl = document.getElementById('messages');
+  const inputEl    = document.getElementById('input');
+  const sendBtn    = document.getElementById('send-btn');
+  const welcomeEl  = document.getElementById('welcome');
+
+  // ── Memória persistente por telefone ──────────────────────────────────────
+  let zitTelefone          = localStorage.getItem('zit_telefone') || null;
+  let telefoneJaSolicitado = !!zitTelefone;  // não pede se já tem salvo
+
+  // Claudio se apresenta ao carregar
+  sendBtn.disabled = true;
+  inputEl.disabled = true;
+  fetch('/api/saudacao')
+    .then(r => r.json())
+    .then(data => {
+      welcomeEl.remove();
+      addBubble('agent', escHtml(data.mensagem));
+    })
+    .catch(() => {
+      welcomeEl.remove();
+      addBubble('agent', escHtml('Oi! Sou o Claudio, assistente virtual da Z-IT Connect 🤖 Como posso te ajudar?'));
+    })
+    .finally(() => {
+      sendBtn.disabled = false;
+      inputEl.disabled = false;
+      inputEl.focus();
+    });
+
+  // Auto-resize textarea
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+  });
+
+  // Send on Enter (Shift+Enter = newline)
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+  });
+  sendBtn.addEventListener('click', enviar);
+
+  function scrollDown() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function addBubble(role, content) {
+    const row = document.createElement('div');
+    row.className = `bubble-row ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'user' ? '👤' : 'C';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = content;
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollDown();
+    return row;
+  }
+
+  function addTyping() {
+    const row = document.createElement('div');
+    row.className = 'bubble-row agent typing';
+    row.innerHTML = `
+      <div class="avatar">🤖</div>
+      <div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    messagesEl.appendChild(row);
+    scrollDown();
+    return row;
+  }
+
+  function statusLabel(status) {
+    const map = {
+      respondido:      'Respondido com alta confiança',
+      baixa_confianca: 'Baixa confiança',
+      sem_resultado:   'Sem resultado',
+    };
+    return map[status] || status;
+  }
+
+  function buildLeadCard(sessionId, mensagemOriginal) {
+    const id = 'lead-' + Math.random().toString(36).slice(2);
+    return `
+      <div class="lead-card" id="${id}">
+        <h4>📋 Seus dados para contato</h4>
+        <input id="${id}-nome"     type="text"  placeholder="Nome completo *" />
+        <input id="${id}-fone"     type="tel"   placeholder="WhatsApp com DDD *" />
+        <select id="${id}-plano">
+          <option value="">Serviço de interesse (opcional)</option>
+          <option value="Automação de Processos">Automação de Processos</option>
+          <option value="Criação de Agente de IA">Criação de Agente de IA</option>
+          <option value="Consultoria em IA">Consultoria em IA</option>
+        </select>
+        <button onclick="enviarLead('${id}','${escHtml(sessionId)}','${escHtml(mensagemOriginal)}')">
+          Quero ser contatado pela equipe Z-IT Connect! 🚀
+        </button>
+      </div>`;
+  }
+
+  async function enviarLead(id, sessionId, mensagemOriginal) {
+    const nome     = document.getElementById(id + '-nome').value.trim();
+    const telefone = document.getElementById(id + '-fone').value.trim();
+    const plano    = document.getElementById(id + '-plano').value;
+    const btn      = document.querySelector(`#${id} button`);
+
+    if (!nome || !telefone) {
+      alert('Por favor, preencha nome e WhatsApp.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      const r = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, telefone, plano, session_id: sessionId, mensagem_original: mensagemOriginal }),
+      });
+      const data = await r.json();
+
+      if (data.ok) {
+        document.getElementById(id).innerHTML =
+          `<div class="lead-enviado">✅ Recebido! Nossa equipe vai falar com você no ${escHtml(telefone)} em breve.</div>`;
+        addBubble('agent', escHtml(
+          `Perfeito, ${escHtml(nome)}! 🎉 Nosso time vai entrar em contato no seu WhatsApp em breve. Qualquer dúvida, pode me perguntar aqui!`
+        ));
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Tentar novamente';
+        alert(data.erro || 'Erro ao enviar. Tente novamente.');
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Tentar novamente';
+      alert('Erro de conexão. Tente novamente.');
+    }
+  }
+
+  // ── Captura de telefone ───────────────────────────────────────────────────
+  function buildPhoneCard() {
+    return `
+      <div class="phone-card" id="phone-card">
+        <p>📱 Para eu lembrar de você na próxima vez, informe seu WhatsApp (opcional):</p>
+        <div class="phone-row">
+          <input id="phone-input" type="tel" placeholder="(11) 99999-9999"
+            onkeydown="if(event.key==='Enter')salvarTelefone()" />
+          <button class="btn-salvar" onclick="salvarTelefone()">Salvar</button>
+        </div>
+        <button class="btn-agora-nao" onclick="descartarPhone()">Agora não</button>
+      </div>`;
+  }
+
+  function normalizarTelefone(raw) {
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length === 10 || digits.length === 11) return '55' + digits;
+    if (digits.length === 12 || digits.length === 13) return digits;
+    return null;
+  }
+
+  function salvarTelefone() {
+    const raw  = (document.getElementById('phone-input')?.value || '').trim();
+    const tel  = normalizarTelefone(raw);
+    const card = document.getElementById('phone-card');
+
+    if (!tel) {
+      alert('Número inválido. Use o formato (11) 99999-9999.');
+      return;
+    }
+
+    zitTelefone = tel;
+    localStorage.setItem('zit_telefone', tel);
+
+    if (card) {
+      card.outerHTML = `<div class="phone-confirmado">✅ WhatsApp salvo! Agora vou lembrar de você nas próximas visitas.</div>`;
+    }
+  }
+
+  function descartarPhone() {
+    telefoneJaSolicitado = true;  // não pergunta de novo nesta sessão
+    const card = document.getElementById('phone-card');
+    if (card) card.remove();
+  }
+
+  function buildAgentBubble(data, perguntaOriginal = '') {
+    const { respondeu, resposta, score, score_status, documentos_usados, capturar_lead, session_id } = data;
+
+    let html = '';
+
+    if (respondeu && resposta) {
+      html += `<div style="white-space:pre-wrap">${escHtml(resposta)}</div>`;
+    } else {
+      html += `<div style="color:#999;font-style:italic">Não encontrei informações suficientes para responder com segurança. Por favor, acesse zitconnect.com ou fale com nossa equipe.</div>`;
+    }
+
+    if (capturar_lead) {
+      html += buildLeadCard(session_id || '', perguntaOriginal);
+    }
+
+    // Meta: badge + score
+    html += `<div class="meta">
+      <span class="badge ${score_status}">${statusLabel(score_status)}</span>
+      <span style="color:#aaa;margin-left:6px">score: ${score.toFixed(4)}</span>`;
+
+    // Trechos encontrados
+    if (documentos_usados && documentos_usados.length) {
+      const id = 'tr-' + Math.random().toString(36).slice(2);
+      html += `<br><button class="trechos-toggle" onclick="toggleTrechos('${id}')">
+        Ver ${documentos_usados.length} trecho(s) encontrado(s)
+      </button>
+      <div class="trechos-list" id="${id}">`;
+
+      documentos_usados.forEach((doc, i) => {
+        html += `<div class="trecho-item">
+          <div class="trecho-meta">[${i+1}] categoria: ${escHtml(doc.categoria || '—')} | score: ${doc.score.toFixed(4)}</div>
+          <div>${escHtml(doc.preview || '')}</div>
+        </div>`;
+      });
+
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  function toggleTrechos(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+    const btn = el.previousElementSibling;
+    const open = el.classList.contains('open');
+    const n = el.querySelectorAll('.trecho-item').length;
+    btn.textContent = open
+      ? `Ocultar trechos`
+      : `Ver ${n} trecho(s) encontrado(s)`;
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  async function enviar() {
+    const pergunta = inputEl.value.trim();
+    if (!pergunta) return;
+
+    if (welcomeEl && welcomeEl.parentNode) welcomeEl.remove();
+
+    // User bubble
+    addBubble('user', escHtml(pergunta));
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    // Typing indicator
+    const typing = addTyping();
+
+    try {
+      const res = await fetch('/api/perguntar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pergunta, telefone: zitTelefone }),
+      });
+
+      const data = await res.json();
+      typing.remove();
+
+      if (data.erro) {
+        addBubble('agent', `<span style="color:#c00">${escHtml(data.erro)}</span>`);
+      } else {
+        const row = addBubble('agent', buildAgentBubble(data, pergunta));
+
+        // Após a primeira resposta, pede WhatsApp se ainda não tem
+        if (!telefoneJaSolicitado) {
+          telefoneJaSolicitado = true;
+          const bubble = row.querySelector('.bubble');
+          if (bubble) bubble.insertAdjacentHTML('beforeend', buildPhoneCard());
+          scrollDown();
+        }
+      }
+    } catch (err) {
+      typing.remove();
+      addBubble('agent', `<span style="color:#c00">Erro de conexão. Tente novamente.</span>`);
+    } finally {
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+flask==3.0.3
+flask-cors==6.0.2
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-groq>=0.2.0
+langchain-text-splitters>=0.3.0
+sentence-transformers>=3.0.0
+groq>=0.30.0
+supabase==2.7.4
+python-dotenv==1.0.1
+pymupdf==1.25.5
+requests==2.32.3

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics — Claudio · Z-IT Connect</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      color: #222;
+      min-height: 100dvh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .logo {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 17px; font-weight: 700; }
+    header p  { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .nav-btn {
+      margin-left: auto;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .15s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,.2); }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 14px;
+    }
+
+    /* ── Período selector ── */
+    .periodo-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .periodo-bar h2 { font-size: 22px; font-weight: 700; }
+    .periodo-btns { display: flex; gap: 6px; }
+    .periodo-btns button {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1.5px solid #d1d5db;
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .15s;
+      color: #555;
+    }
+    .periodo-btns button.active {
+      background: #0ea5e9;
+      border-color: #0ea5e9;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ── KPI cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      border-left: 4px solid transparent;
+    }
+    .kpi-card.azul   { border-color: #6366f1; }
+    .kpi-card.verde  { border-color: #22c55e; }
+    .kpi-card.laranja{ border-color: #f59e0b; }
+    .kpi-card.roxo    { border-color: #a855f7; }
+    .kpi-card.vermelho{ border-color: #0ea5e9; }
+
+    .kpi-label {
+      font-size: 12px;
+      color: #888;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .kpi-valor {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .kpi-card.azul     .kpi-valor { color: #6366f1; }
+    .kpi-card.verde    .kpi-valor { color: #22c55e; }
+    .kpi-card.laranja  .kpi-valor { color: #f59e0b; }
+    .kpi-card.roxo     .kpi-valor { color: #a855f7; }
+    .kpi-card.vermelho .kpi-valor { color: #0ea5e9; }
+    .kpi-sub { font-size: 12px; color: #aaa; }
+
+    /* ── Gráficos ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 700px) {
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    .chart-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    .chart-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #444;
+    }
+    .chart-wrap { position: relative; }
+    .chart-wrap.donut { max-width: 240px; margin: 0 auto; }
+
+    /* ── Legenda do donut ── */
+    .donut-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-pct {
+      margin-left: auto;
+      font-weight: 700;
+      color: #444;
+    }
+
+    /* ── Tabela perguntas ── */
+    .table-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .table-header h3 { font-size: 14px; font-weight: 600; color: #444; }
+    .table-badge {
+      font-size: 11px;
+      background: #fef3c7;
+      color: #92400e;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 0 12px 10px;
+    }
+    tbody tr {
+      border-top: 1px solid #f3f4f6;
+      transition: background .1s;
+    }
+    tbody tr:hover { background: #fafafa; }
+    tbody td {
+      padding: 11px 12px;
+      font-size: 13px;
+      color: #444;
+    }
+    td.pergunta { max-width: 420px; }
+    td.pergunta span {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pill.sem_resultado   { background: #fee2e2; color: #991b1b; }
+    .pill.baixa_confianca { background: #fef3c7; color: #92400e; }
+
+    .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .score-bar {
+      height: 6px; border-radius: 3px;
+      background: #f3f4f6;
+      width: 80px; flex-shrink: 0;
+      overflow: hidden;
+    }
+    .score-bar-fill { height: 100%; border-radius: 3px; background: #0ea5e9; }
+    .score-val { font-size: 12px; color: #888; }
+
+    /* ── Status select (gestão de leads) ── */
+    .status-select {
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1.5px solid;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 24px;
+      transition: opacity .15s;
+    }
+    .status-select:disabled { opacity: .5; cursor: default; }
+    .status-select.novo       { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .status-select.contatado  { background-color: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+    .status-select.convertido { background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+    .status-select.perdido    { background-color: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
+    td.msg-col { max-width: 260px; }
+    td.msg-col span {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: #666;
+      font-size: 12px;
+    }
+
+    /* ── Empty / loading ── */
+    .empty {
+      text-align: center;
+      color: #bbb;
+      padding: 32px;
+      font-size: 14px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #0ea5e9;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Login overlay ── */
+    #login-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    #login-overlay.visible { display: flex; }
+    .login-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 360px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    }
+    .login-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: #1a1a2e; }
+    .login-box p  { font-size: 13px; color: #888; margin-bottom: 20px; }
+    .login-box input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 9px;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color .15s;
+    }
+    .login-box input:focus { border-color: #0ea5e9; }
+    .login-box button {
+      width: 100%;
+      padding: 11px;
+      background: #0ea5e9;
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .login-box button:hover { background: #0284c7; }
+    .login-error {
+      font-size: 12px;
+      color: #ef4444;
+      margin-top: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="login-box">
+    <h2>🔐 Acesso Admin</h2>
+    <p>Insira a chave de administrador para visualizar o dashboard.</p>
+    <input type="password" id="admin-key-input" placeholder="ADMIN_API_KEY"
+           onkeydown="if(event.key==='Enter') submitAdminKey()" />
+    <button onclick="submitAdminKey()">Entrar</button>
+    <div class="login-error" id="login-error">Chave incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">C</div>
+  <div>
+    <h1>Claudio · Analytics</h1>
+    <p>Z-IT Connect — Painel de desempenho</p>
+  </div>
+  <a class="nav-btn" href="/">← Voltar ao chat</a>
+</header>
+
+<main>
+
+  <div class="periodo-bar">
+    <h2>Visão Geral</h2>
+    <div class="periodo-btns">
+      <button data-dias="7"  class="active">7 dias</button>
+      <button data-dias="14">14 dias</button>
+      <button data-dias="30">30 dias</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <p class="section-title">Indicadores</p>
+  <div class="kpi-grid">
+    <div class="kpi-card azul">
+      <div class="kpi-label">Total de interações</div>
+      <div class="kpi-valor" id="kpi-total">—</div>
+      <div class="kpi-sub" id="kpi-hoje">— hoje</div>
+    </div>
+    <div class="kpi-card verde">
+      <div class="kpi-label">Taxa de resposta</div>
+      <div class="kpi-valor" id="kpi-taxa">—</div>
+      <div class="kpi-sub">perguntas respondidas</div>
+    </div>
+    <div class="kpi-card laranja">
+      <div class="kpi-label">Score RAG médio</div>
+      <div class="kpi-valor" id="kpi-score">—</div>
+      <div class="kpi-sub">similaridade semântica</div>
+    </div>
+    <div class="kpi-card roxo">
+      <div class="kpi-label">Sem resposta</div>
+      <div class="kpi-valor" id="kpi-sem">—</div>
+      <div class="kpi-sub">precisam de mais conteúdo</div>
+    </div>
+    <div class="kpi-card" style="border-color:#0ea5e9">
+      <div class="kpi-label">Canal</div>
+      <div style="display:flex;gap:16px;align-items:flex-end;margin-bottom:4px">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:2px">🌐 Web</div>
+          <div class="kpi-valor" id="kpi-canal-web" style="color:#0ea5e9;font-size:26px">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:2px">💬 WhatsApp</div>
+          <div class="kpi-valor" id="kpi-canal-wa" style="color:#25d366;font-size:26px">—</div>
+        </div>
+      </div>
+      <div class="kpi-sub" id="kpi-canal-pct">—% via WhatsApp</div>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <p class="section-title">Tendência</p>
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>Interações por dia</h3>
+      <div class="chart-wrap">
+        <canvas id="chart-linha" height="110"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Distribuição de status</h3>
+      <div class="chart-wrap donut">
+        <canvas id="chart-donut"></canvas>
+      </div>
+      <div class="donut-legend" id="donut-legend"></div>
+    </div>
+  </div>
+
+  <!-- Intenções -->
+  <p class="section-title">Intenções detectadas</p>
+  <div class="chart-card" style="margin-bottom:28px">
+    <h3>Distribuição de intenções</h3>
+    <div id="intencoes-wrap">
+      <div class="empty"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <p class="section-title">Lacunas na base de conhecimento</p>
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Perguntas não respondidas ou com baixa confiança</h3>
+      <span class="table-badge">⚠ Usar para enriquecer o FAQ</span>
+    </div>
+    <div id="tabela-wrap">
+      <div class="empty"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+
+  <!-- Funil + Gestão de Leads -->
+  <p class="section-title" style="margin-top:40px">Funil de Leads</p>
+  <div class="kpi-grid">
+    <div class="kpi-card vermelho">
+      <div class="kpi-label">Leads captados</div>
+      <div class="kpi-valor" id="lkpi-total">—</div>
+      <div class="kpi-sub" id="lkpi-hoje">— hoje</div>
+    </div>
+    <div class="kpi-card azul">
+      <div class="kpi-label">Novos</div>
+      <div class="kpi-valor" id="lkpi-novo">—</div>
+      <div class="kpi-sub">aguardando contato</div>
+    </div>
+    <div class="kpi-card verde">
+      <div class="kpi-label">Convertidos</div>
+      <div class="kpi-valor" id="lkpi-convertido">—</div>
+      <div class="kpi-sub" id="lkpi-taxa">—% do total</div>
+    </div>
+    <div class="kpi-card laranja">
+      <div class="kpi-label">Perdidos</div>
+      <div class="kpi-valor" id="lkpi-perdido">—</div>
+      <div class="kpi-sub">não convertidos</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>Funil de conversão</h3>
+      <div id="funil-wrap"><div class="empty"><div class="spinner"></div>Carregando...</div></div>
+    </div>
+    <div class="chart-card">
+      <h3>Planos de interesse</h3>
+      <div id="planos-wrap"><div class="empty"><div class="spinner"></div>Carregando...</div></div>
+    </div>
+  </div>
+
+  <!-- Tabela de gestão de leads -->
+  <p class="section-title" style="margin-top:8px">Gestão de Leads</p>
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Todos os leads captados</h3>
+      <span class="table-badge" id="leads-badge" style="background:#fee2e2;color:#991b1b">carregando...</span>
+    </div>
+    <div id="leads-table-wrap">
+      <div class="empty"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  let chartLinha = null;
+  let chartDonut = null;
+  let chartFunil = null;
+  let chartPlano = null;
+  let diasAtual = 7;
+
+  // ── Cores ──────────────────────────────────────────────────────────────────
+  const COR = {
+    respondido:      { bg: '#22c55e', light: 'rgba(34,197,94,.15)'  },
+    baixa_confianca: { bg: '#f59e0b', light: 'rgba(245,158,11,.15)' },
+    sem_resultado:   { bg: '#0ea5e9', light: 'rgba(14,165,233,.15)'  },
+  };
+  const LABEL = {
+    respondido:      'Respondido',
+    baixa_confianca: 'Baixa confiança',
+    sem_resultado:   'Sem resultado',
+  };
+
+  // ── Admin key (sessionStorage — descartada ao fechar a aba) ──────────────
+  const _KEY_STORAGE = 'zit_admin_key';
+  function _getKey() { return sessionStorage.getItem(_KEY_STORAGE) || ''; }
+  function _setKey(k) { sessionStorage.setItem(_KEY_STORAGE, k); }
+
+  function mostrarLogin(erro = false) {
+    document.getElementById('login-overlay').classList.add('visible');
+    document.getElementById('login-error').style.display = erro ? 'block' : 'none';
+    setTimeout(() => document.getElementById('admin-key-input').focus(), 50);
+  }
+  function ocultarLogin() {
+    document.getElementById('login-overlay').classList.remove('visible');
+    document.getElementById('admin-key-input').value = '';
+  }
+  async function submitAdminKey() {
+    const key = document.getElementById('admin-key-input').value.trim();
+    if (!key) return;
+    _setKey(key);
+    // Testa a chave antes de fechar o overlay
+    try {
+      await apiFetch('/api/analytics/resumo');
+      ocultarLogin();
+      carregar(diasAtual);
+      fetchNaoRespondidas().then(renderTabela).catch(() => {});
+      fetchLeads().then(renderLeads).catch(() => {});
+      apiFetch('/api/leads').then(renderLeadsTabela).catch(() => {});
+      fetchCanais().then(data => {
+        const web = data.web || 0, wa = data.whatsapp || 0, total = web + wa;
+        document.getElementById('kpi-canal-web').textContent = web;
+        document.getElementById('kpi-canal-wa').textContent  = wa;
+        document.getElementById('kpi-canal-pct').textContent =
+          total > 0 ? `${(wa/total*100).toFixed(1)}% via WhatsApp` : '—';
+      }).catch(() => {});
+      fetchIntencoes().then(renderIntencoes).catch(() => {});
+    } catch {
+      _setKey('');
+      mostrarLogin(true);
+    }
+  }
+
+  // ── Fetch helpers ──────────────────────────────────────────────────────────
+  async function apiFetch(url) {
+    const headers = {};
+    const key = _getKey();
+    if (key) headers['X-Admin-Key'] = key;
+
+    const r = await fetch(url, { headers });
+
+    if (r.status === 401) {
+      mostrarLogin(!!_getKey()); // mostra erro só se já tinha uma chave (chave errada)
+      _setKey('');
+      throw new Error(`Autenticação necessária`);
+    }
+    if (!r.ok) throw new Error(`HTTP ${r.status} em ${url}`);
+    return r.json();
+  }
+  const fetchResumo         = ()    => apiFetch('/api/analytics/resumo');
+  const fetchHistorico      = dias  => apiFetch(`/api/analytics/historico?dias=${dias}`);
+  const fetchNaoRespondidas = ()    => apiFetch('/api/analytics/nao-respondidas');
+  const fetchLeads          = ()    => apiFetch('/api/analytics/leads');
+  const fetchCanais         = ()    => apiFetch('/api/analytics/canais');
+  const fetchIntencoes      = ()    => apiFetch('/api/analytics/intencoes');
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  function renderKpis(data) {
+    document.getElementById('kpi-total').textContent = data.total;
+    document.getElementById('kpi-hoje').textContent  = `${data.hoje} hoje`;
+    document.getElementById('kpi-taxa').textContent  = `${data.taxa_resposta}%`;
+    document.getElementById('kpi-score').textContent = data.score_medio.toFixed(2);
+    document.getElementById('kpi-sem').textContent   = data.por_status.sem_resultado;
+  }
+
+  // ── Gráfico de linha ───────────────────────────────────────────────────────
+  function renderLinha(historico) {
+    const labels    = historico.map(d => formatDia(d.dia));
+    const totais    = historico.map(d => d.total);
+    const respondidas = historico.map(d => d.respondidas);
+
+    if (chartLinha) chartLinha.destroy();
+    chartLinha = new Chart(document.getElementById('chart-linha'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Total',
+            data: totais,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,.1)',
+            fill: true,
+            tension: .4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          },
+          {
+            label: 'Respondidas',
+            data: respondidas,
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34,197,94,.08)',
+            fill: true,
+            tension: .4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 12 } } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          x: { grid: { display: false } },
+        },
+      },
+    });
+  }
+
+  // ── Gráfico de donut ───────────────────────────────────────────────────────
+  function renderDonut(resumo) {
+    const status = resumo.por_status;
+    const total  = resumo.total || 1;
+    const keys   = ['respondido', 'baixa_confianca', 'sem_resultado'];
+
+    if (chartDonut) chartDonut.destroy();
+    chartDonut = new Chart(document.getElementById('chart-donut'), {
+      type: 'doughnut',
+      data: {
+        labels: keys.map(k => LABEL[k]),
+        datasets: [{
+          data: keys.map(k => status[k] || 0),
+          backgroundColor: keys.map(k => COR[k].bg),
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverOffset: 6,
+        }],
+      },
+      options: {
+        cutout: '68%',
+        plugins: { legend: { display: false } },
+      },
+    });
+
+    // Legenda manual
+    const leg = document.getElementById('donut-legend');
+    leg.innerHTML = keys.map(k => {
+      const pct = total > 0 ? ((status[k] || 0) / total * 100).toFixed(1) : '0.0';
+      return `<div class="legend-item">
+        <div class="legend-dot" style="background:${COR[k].bg}"></div>
+        <span>${LABEL[k]}</span>
+        <span class="legend-pct">${pct}%</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Tabela ─────────────────────────────────────────────────────────────────
+  function renderTabela(rows) {
+    const wrap = document.getElementById('tabela-wrap');
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="empty">✅ Nenhuma pergunta sem resposta. Ótimo desempenho!</div>';
+      return;
+    }
+
+    const linhas = rows.map(row => {
+      const score = row.score_rag ?? 0;
+      const fill  = Math.min(score * 100 * 2, 100).toFixed(0); // escala visual 0–0.5
+      const data  = row.criado_em ? row.criado_em.slice(0, 10) : '—';
+
+      return `<tr>
+        <td class="pergunta"><span>${esc(row.pergunta || '—')}</span></td>
+        <td><span class="pill ${row.score_status}">${LABEL[row.score_status] || row.score_status}</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar"><div class="score-bar-fill" style="width:${fill}%"></div></div>
+            <span class="score-val">${score.toFixed(3)}</span>
+          </div>
+        </td>
+        <td>${data}</td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Pergunta</th>
+            <th>Status</th>
+            <th>Score RAG</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody>${linhas}</tbody>
+      </table>`;
+  }
+
+  // ── Utilitários ────────────────────────────────────────────────────────────
+  function formatDia(iso) {
+    const [, m, d] = iso.split('-');
+    return `${d}/${m}`;
+  }
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Helpers de erro visível ────────────────────────────────────────────────
+  function mostrarErro(elementId, msg) {
+    const el = document.getElementById(elementId);
+    if (el) el.innerHTML = `<div class="empty" style="color:#0ea5e9">⚠ ${msg}</div>`;
+  }
+
+  // ── Carregamento principal ─────────────────────────────────────────────────
+  async function carregar(dias) {
+    diasAtual = dias;
+
+    document.querySelectorAll('.periodo-btns button').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.dias) === dias);
+    });
+
+    try {
+      const resumo   = await fetchResumo();
+      const historico = await fetchHistorico(dias);
+      renderKpis(resumo);
+
+      if (typeof Chart === 'undefined') {
+        document.querySelector('.charts-row').innerHTML =
+          '<div class="chart-card" style="grid-column:1/-1"><div class="empty">⚠ Chart.js não carregou. Verifique sua conexão e recarregue a página.</div></div>';
+      } else {
+        renderLinha(historico);
+        renderDonut(resumo);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar analytics:', err);
+      document.querySelector('.charts-row').innerHTML =
+        `<div class="chart-card" style="grid-column:1/-1"><div class="empty" style="color:#0ea5e9">⚠ Erro: ${err.message}</div></div>`;
+    }
+  }
+
+  // ── Intenções ──────────────────────────────────────────────────────────────
+  const INTENCAO_COR = {
+    duvida:     { bg: '#6366f1', light: 'rgba(99,102,241,.12)'  },
+    lead:       { bg: '#22c55e', light: 'rgba(34,197,94,.12)'   },
+    saudacao:   { bg: '#0ea5e9', light: 'rgba(14,165,233,.12)'  },
+    informacao: { bg: '#f59e0b', light: 'rgba(245,158,11,.12)'  },
+    reclamacao: { bg: '#ef4444', light: 'rgba(239,68,68,.12)'   },
+    elogio:     { bg: '#a855f7', light: 'rgba(168,85,247,.12)'  },
+    blocked:    { bg: '#94a3b8', light: 'rgba(148,163,184,.12)' },
+  };
+  const INTENCAO_NOME = {
+    duvida:     'Dúvida',
+    lead:       'Lead / Contratação',
+    saudacao:   'Saudação',
+    informacao: 'Informação',
+    reclamacao: 'Reclamação',
+    elogio:     'Elogio',
+    blocked:    'Bloqueado',
+  };
+
+  function renderIntencoes(data) {
+    const wrap = document.getElementById('intencoes-wrap');
+    const { total, por_intencao, aviso } = data;
+
+    if (aviso === 'coluna_ausente') {
+      wrap.innerHTML = '<div class="empty">⚠ Coluna <code>intencao</code> não existe ainda.<br>Execute no Supabase: <code>ALTER TABLE zit_interacoes ADD COLUMN IF NOT EXISTS intencao text DEFAULT \'duvida\';</code></div>';
+      return;
+    }
+
+    if (!total || !por_intencao || Object.keys(por_intencao).length === 0) {
+      wrap.innerHTML = '<div class="empty">Nenhuma intenção registrada ainda.</div>';
+      return;
+    }
+
+    const entries = Object.entries(por_intencao).sort((a, b) => b[1] - a[1]);
+
+    wrap.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px 28px">
+        ${entries.map(([key, count]) => {
+          const pct = (count / total * 100).toFixed(1);
+          const cor = (INTENCAO_COR[key] || { bg: '#0ea5e9', light: 'rgba(14,165,233,.12)' });
+          const nome = INTENCAO_NOME[key] || key.charAt(0).toUpperCase() + key.slice(1);
+          return `
+            <div style="padding:10px 0;border-bottom:1px solid #f3f4f6">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:10px;height:10px;border-radius:50%;background:${cor.bg};flex-shrink:0"></div>
+                  <span style="font-size:13px;color:#444;font-weight:500">${nome}</span>
+                </div>
+                <div style="text-align:right">
+                  <span style="font-size:20px;font-weight:800;color:${cor.bg};line-height:1">${pct}%</span>
+                  <span style="font-size:11px;color:#aaa;margin-left:4px">${count} interact.</span>
+                </div>
+              </div>
+              <div style="background:#f3f4f6;border-radius:99px;height:7px;overflow:hidden">
+                <div style="width:${pct}%;height:100%;background:${cor.bg};border-radius:99px;
+                            transition:width .6s cubic-bezier(.4,0,.2,1)"></div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      <div style="margin-top:14px;font-size:12px;color:#aaa;text-align:right">
+        Total: ${total} interação${total !== 1 ? 'ões' : ''}
+      </div>`;
+  }
+
+  fetchIntencoes()
+    .then(renderIntencoes)
+    .catch(err => mostrarErro('intencoes-wrap', 'Falha ao carregar intenções: ' + err.message));
+
+  // Tabela carrega uma vez (independe do período)
+  fetchNaoRespondidas()
+    .then(rows => {
+      try {
+        renderTabela(rows);
+      } catch (err) {
+        mostrarErro('tabela-wrap', 'Erro ao renderizar tabela: ' + err.message);
+      }
+    })
+    .catch(err => {
+      mostrarErro('tabela-wrap', 'Falha na requisição: ' + err.message);
+    });
+
+  // Botões de período
+  document.querySelectorAll('.periodo-btns button').forEach(btn => {
+    btn.addEventListener('click', () => carregar(parseInt(btn.dataset.dias)));
+  });
+
+  // ── Leads ─────────────────────────────────────────────────────────────────
+  function renderLeads(data) {
+    const { total, hoje, por_status, por_plano, taxa_conversao } = data;
+
+    document.getElementById('lkpi-total').textContent     = total;
+    document.getElementById('lkpi-hoje').textContent      = `${hoje} hoje`;
+    document.getElementById('lkpi-novo').textContent      = por_status.novo;
+    document.getElementById('lkpi-convertido').textContent= por_status.convertido;
+    document.getElementById('lkpi-taxa').textContent      = `${taxa_conversao}% do total`;
+    document.getElementById('lkpi-perdido').textContent   = por_status.perdido;
+
+    if (typeof Chart === 'undefined') return;
+
+    // Funil horizontal
+    const funilWrap = document.getElementById('funil-wrap');
+    funilWrap.innerHTML = total === 0
+      ? '<div class="empty">Nenhum lead captado ainda.</div>'
+      : '<canvas id="chart-funil" height="140"></canvas>';
+
+    if (total > 0) {
+      if (chartFunil) chartFunil.destroy();
+      chartFunil = new Chart(document.getElementById('chart-funil'), {
+        type: 'bar',
+        data: {
+          labels: ['Captados', 'Contatados', 'Convertidos', 'Perdidos'],
+          datasets: [{
+            data: [total, por_status.contatado, por_status.convertido, por_status.perdido],
+            backgroundColor: ['#6366f1', '#3b82f6', '#22c55e', '#0ea5e9'],
+            borderRadius: 6,
+            barThickness: 28,
+          }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                  return ` ${ctx.raw} lead${ctx.raw !== 1 ? 's' : ''} (${pct}%)`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { display: false } },
+            y: { grid: { display: false } },
+          },
+        },
+      });
+    }
+
+    // Por plano
+    const planosWrap = document.getElementById('planos-wrap');
+    const planoLabels = Object.keys(por_plano);
+    const planoData   = Object.values(por_plano);
+
+    planosWrap.innerHTML = planoLabels.length === 0
+      ? '<div class="empty">Nenhum dado de plano disponível.</div>'
+      : '<canvas id="chart-plano" height="140"></canvas>';
+
+    if (planoLabels.length > 0) {
+      if (chartPlano) chartPlano.destroy();
+      chartPlano = new Chart(document.getElementById('chart-plano'), {
+        type: 'bar',
+        data: {
+          labels: planoLabels,
+          datasets: [{
+            data: planoData,
+            backgroundColor: ['#6366f1', '#22c55e', '#f59e0b', '#a855f7', '#0ea5e9'],
+            borderRadius: 6,
+            barThickness: 28,
+          }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { display: false } },
+            y: { grid: { display: false } },
+          },
+        },
+      });
+    }
+  }
+
+  fetchLeads()
+    .then(renderLeads)
+    .catch(err => {
+      mostrarErro('funil-wrap',  'Falha ao carregar leads: ' + err.message);
+      mostrarErro('planos-wrap', 'Falha ao carregar leads: ' + err.message);
+    });
+
+  // ── Tabela de gestão de leads ──────────────────────────────────────────────
+  const STATUS_LABEL = {
+    novo:       'Novo',
+    contatado:  'Contatado',
+    convertido: 'Convertido',
+    perdido:    'Perdido',
+  };
+
+  function renderLeadsTabela(rows) {
+    const wrap  = document.getElementById('leads-table-wrap');
+    const badge = document.getElementById('leads-badge');
+
+    badge.textContent = `${rows.length} lead${rows.length !== 1 ? 's' : ''}`;
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="empty">Nenhum lead captado ainda.</div>';
+      return;
+    }
+
+    const linhas = rows.map(row => {
+      const data   = row.criado_em ? row.criado_em.slice(0, 10) : '—';
+      const hora   = row.criado_em ? row.criado_em.slice(11, 16) : '';
+      const status = row.status || 'novo';
+      const plano  = row.plano_interesse || '—';
+      const msg    = row.mensagem_original || '—';
+
+      const opts = Object.entries(STATUS_LABEL).map(([val, label]) =>
+        `<option value="${val}" ${val === status ? 'selected' : ''}>${label}</option>`
+      ).join('');
+
+      return `<tr id="lead-row-${row.id}">
+        <td style="white-space:nowrap;color:#888;font-size:12px">${data}<br>${hora}</td>
+        <td><strong>${esc(row.nome)}</strong></td>
+        <td style="white-space:nowrap">${esc(row.telefone)}</td>
+        <td style="white-space:nowrap">${esc(plano)}</td>
+        <td class="msg-col"><span title="${esc(msg)}">${esc(msg)}</span></td>
+        <td>
+          <select class="status-select ${status}" id="sel-${row.id}"
+            data-status-atual="${status}"
+            onchange="atualizarStatusLead('${row.id}', this)">
+            ${opts}
+          </select>
+        </td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Nome</th>
+            <th>WhatsApp</th>
+            <th>Plano</th>
+            <th>Mensagem original</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${linhas}</tbody>
+      </table>`;
+  }
+
+  async function atualizarStatusLead(leadId, selectEl) {
+    const novoStatus    = selectEl.value;
+    const statusAnterior = selectEl.dataset.statusAtual;  // salvo no HTML, reflete o servidor
+    selectEl.disabled = true;
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const key = _getKey();
+      if (key) headers['X-Admin-Key'] = key;
+      const r = await fetch(`/api/leads/${leadId}/status`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ status: novoStatus }),
+      });
+      const data = await r.json();
+
+      if (data.ok) {
+        selectEl.className = `status-select ${novoStatus}`;
+        selectEl.dataset.statusAtual = novoStatus;
+        // Recarrega KPIs do funil em background
+        fetchLeads().then(renderLeads).catch(() => {});
+      } else {
+        alert(data.erro || 'Erro ao atualizar status.');
+        selectEl.value = statusAnterior;
+      }
+    } catch {
+      alert('Erro de conexão. Tente novamente.');
+      selectEl.value = statusAnterior;
+    } finally {
+      selectEl.disabled = false;
+    }
+  }
+
+  apiFetch('/api/leads')
+    .then(renderLeadsTabela)
+    .catch(err => mostrarErro('leads-table-wrap', 'Falha ao carregar leads: ' + err.message));
+
+  // Canal
+  fetchCanais()
+    .then(data => {
+      const web = data.web || 0;
+      const wa  = data.whatsapp || 0;
+      const total = web + wa;
+      document.getElementById('kpi-canal-web').textContent = web;
+      document.getElementById('kpi-canal-wa').textContent  = wa;
+      document.getElementById('kpi-canal-pct').textContent =
+        total > 0 ? `${(wa / total * 100).toFixed(1)}% via WhatsApp` : '—';
+    })
+    .catch(() => {});
+
+  // Carga inicial — testa auth antes de carregar tudo
+  apiFetch('/api/analytics/resumo')
+    .then(resumo => {
+      renderKpis(resumo);
+      return fetchHistorico(7).then(historico => {
+        if (typeof Chart !== 'undefined') {
+          renderLinha(historico);
+          renderDonut(resumo);
+        }
+      });
+    })
+    .catch(() => {}); // 401 já abre o overlay via apiFetch
+</script>
+</body>
+</html>
